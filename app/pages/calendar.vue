@@ -29,14 +29,10 @@ const calendarDays = computed(() => {
         const firstDay = days[0]!;
         const week = firstDay.getWeek();
         // Week的索引：0=周一，1=周二，...，6=周日
-        const weekIndex = week.getIndex();
-        // 转换为周一到周日（1=周一，7=周日）
-        // weekIndex: 0-6 对应 周一-周日
-        // 需要转换为：1-7 对应 周一-周日
-        const firstDayWeekAdjusted = weekIndex + 1;
+        const weekIndex = week.getIndex() - 1;
 
-        // 前面补空（周一到周日，所以如果第一天是周二，前面补1个空位）
-        for (let i = 1; i < firstDayWeekAdjusted; i++) {
+        // 前面补空（周一到周日，如果第一天是周一weekIndex=0，补0个；周二weekIndex=1，补1个；以此类推）
+        for (let i = 0; i < weekIndex; i++) {
             calendar.push(null);
         }
     }
@@ -130,64 +126,82 @@ const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '�
 </script>
 
 <template>
-    <div class="calendar-container">
+    <div class="w-full h-screen flex flex-col bg-[rgb(49,57,83)] p-10 items-center overflow-auto calendar-container">
         <!-- 顶部切换按钮 -->
-        <div class="calendar-nav-top">
-            <button class="nav-button" @click="changeMonth('prev')" :disabled="isTransitioning">
-                <span class="nav-icon">↑</span>
-                <span class="nav-text">上个月</span>
+        <div class="flex flex-col gap-5 py-6 px-8 bg-white/10 backdrop-blur-[10px] rounded-2xl mb-8 w-fit">
+            <button
+                class="flex items-center gap-2 py-3 px-6 bg-white/20 border-2 border-white/30 rounded-lg text-white text-base font-semibold cursor-pointer transition-all duration-300 hover:bg-white/30 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+                @click="changeMonth('prev')"
+                :disabled="isTransitioning"
+            >
+                <span class="text-xl font-bold">↑</span>
+                <span>上个月</span>
             </button>
-            <div class="month-display">{{ monthDisplay }}</div>
-            <button class="nav-button" @click="changeMonth('next')" :disabled="isTransitioning">
-                <span class="nav-text">下个月</span>
-                <span class="nav-icon">↓</span>
-            </button>
+            <div class="text-2xl font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.2)]">
+                {{ monthDisplay }}
+            </div>
         </div>
 
         <!-- 日历主体 -->
-        <div class="calendar-wrapper">
+        <div class="relative w-full p-4">
             <div
-                class="calendar-grid-container"
+                class="w-full h-full transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
                 :class="{
-                    'slide-up': slideDirection === 'up' && isTransitioning,
-                    'slide-down': slideDirection === 'down' && isTransitioning,
+                    'animate-slide-up': slideDirection === 'up' && isTransitioning,
+                    'animate-slide-down': slideDirection === 'down' && isTransitioning,
                 }"
             >
                 <!-- 星期标题 -->
-                <div class="week-header">
-                    <div v-for="(weekDay, index) in weekDays" :key="index" class="week-day-header">
+                <div class="grid grid-cols-7 gap-4 mb-4">
+                    <div
+                        v-for="(weekDay, index) in weekDays"
+                        :key="index"
+                        class="text-center py-4 text-lg font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]"
+                    >
                         {{ weekDay }}
                     </div>
                 </div>
 
                 <!-- 日期格子 -->
-                <div class="calendar-grid">
+                <div class="grid grid-cols-7 gap-4 h-[calc(100%-4rem)]">
                     <div
                         v-for="(day, index) in calendarDays"
                         :key="`${currentYear}-${currentMonth}-${index}`"
-                        class="calendar-cell"
+                        class="relative bg-white/15 backdrop-blur-[10px] border-2 border-white/20 rounded-xl p-4 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden min-h-[80px] md:min-h-[120px]"
                         :class="{
-                            'not-current-month': day && !isCurrentMonth(day),
-                            'is-hovered': isHovered(day),
-                            'is-selected': isSelected(day),
-                            disabled: !day || !isCurrentMonth(day),
+                            'opacity-40 cursor-not-allowed': day && !isCurrentMonth(day),
+                            'scale-[1.15] z-10 bg-white/30 border-white/50 shadow-[0_8px_24px_rgba(0,0,0,0.3)]':
+                                isHovered(day),
+                            'fixed top-0 left-0 right-0 bottom-0 w-screen h-screen scale-100 z-[1000] bg-white/95 backdrop-blur-[20px] border-0 rounded-none p-12 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] flex flex-col items-center justify-center':
+                                isSelected(day),
+                            'opacity-30 cursor-not-allowed pointer-events-none': !day || !isCurrentMonth(day),
+                            'hover:bg-white/25 hover:border-white/40': day && isCurrentMonth(day) && !isSelected(day),
                         }"
                         @mouseenter="handleMouseEnter(day)"
                         @mouseleave="handleMouseLeave"
                         @click="handleDayClick(day)"
                     >
                         <!-- 日期数字（左上角） -->
-                        <span v-if="day" class="date-number">
+                        <span
+                            v-if="day"
+                            class="absolute top-3 left-3 text-base md:text-xl font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)] z-[1]"
+                            :class="{
+                                'text-5xl text-[#667eea] drop-shadow-none static mb-8': isSelected(day),
+                            }"
+                        >
                             {{ day.getDay() }}
                         </span>
 
                         <!-- 悬浮时显示的内容 -->
-                        <div v-if="isHovered(day)" class="hover-content">
+                        <div
+                            v-if="isHovered(day)"
+                            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4/5 h-4/5 flex items-center justify-center opacity-80"
+                        >
                             <!-- 预留位置，后续补充内容 -->
                         </div>
 
                         <!-- 选中时显示的内容 -->
-                        <div v-if="isSelected(day)" class="selected-content">
+                        <div v-if="isSelected(day)" class="w-full h-full flex flex-col items-center justify-center p-8">
                             <!-- 预留位置，后续补充内容 -->
                         </div>
                     </div>
@@ -196,104 +210,22 @@ const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '�
         </div>
 
         <!-- 底部切换按钮 -->
-        <div class="calendar-nav-bottom">
-            <button class="nav-button" @click="changeMonth('prev')" :disabled="isTransitioning">
-                <span class="nav-icon">↑</span>
-                <span class="nav-text">上个月</span>
-            </button>
-            <div class="month-display">{{ monthDisplay }}</div>
-            <button class="nav-button" @click="changeMonth('next')" :disabled="isTransitioning">
-                <span class="nav-text">下个月</span>
-                <span class="nav-icon">↓</span>
-            </button>
-        </div>
+        <button
+            class="mt-10 flex items-center gap-2 py-3 px-6 bg-white/20 border-2 border-white/30 rounded-lg text-white text-base font-semibold cursor-pointer transition-all duration-300 hover:bg-white/30 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="changeMonth('next')"
+            :disabled="isTransitioning"
+        >
+            <span class="text-xl font-bold">↓</span>
+            <span>下个月</span>
+        </button>
     </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .calendar-container {
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 2rem;
-    overflow: hidden;
-}
-
-.calendar-nav-top,
-.calendar-nav-bottom {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem 2rem;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 1rem;
-    margin-bottom: 2rem;
-}
-
-.calendar-nav-bottom {
-    margin-top: 2rem;
-    margin-bottom: 0;
-}
-
-.nav-button {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: rgba(255, 255, 255, 0.2);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 0.5rem;
-    color: white;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.nav-button:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.nav-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.nav-icon {
-    font-size: 1.2rem;
-    font-weight: bold;
-}
-
-.month-display {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: white;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.calendar-wrapper {
-    flex: 1;
-    overflow: hidden;
-    position: relative;
-}
-
-.calendar-grid-container {
-    width: 100%;
-    height: 100%;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.calendar-grid-container.slide-up {
-    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.calendar-grid-container.slide-down {
-    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    &::-webkit-scrollbar {
+        display: none;
+    }
 }
 
 @keyframes slideUp {
@@ -326,142 +258,11 @@ const weekDays = ['周一', '周二', '周三', '周四', '周五', '周六', '�
     }
 }
 
-.week-header {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1rem;
-    margin-bottom: 1rem;
+.animate-slide-up {
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.week-day-header {
-    text-align: center;
-    padding: 1rem;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 1rem;
-    height: calc(100% - 4rem);
-}
-
-.calendar-cell {
-    position: relative;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 0.75rem;
-    padding: 1rem;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-    min-height: 120px;
-}
-
-.calendar-cell.disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-
-.calendar-cell.not-current-month {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-.calendar-cell:not(.disabled):not(.not-current-month):hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
-.calendar-cell.is-hovered {
-    transform: scale(1.15);
-    z-index: 10;
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-
-.calendar-cell.is-selected {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100vw;
-    height: 100vh;
-    transform: scale(1);
-    z-index: 1000;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
-    border: none;
-    border-radius: 0;
-    padding: 3rem;
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.date-number {
-    position: absolute;
-    top: 0.75rem;
-    left: 0.75rem;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    z-index: 1;
-}
-
-.calendar-cell.is-selected .date-number {
-    font-size: 3rem;
-    color: #667eea;
-    text-shadow: none;
-    position: static;
-    margin-bottom: 2rem;
-}
-
-.hover-content {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80%;
-    height: 80%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.8;
-}
-
-.selected-content {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-    .calendar-container {
-        padding: 1rem;
-    }
-
-    .calendar-cell {
-        min-height: 80px;
-    }
-
-    .date-number {
-        font-size: 1rem;
-    }
+.animate-slide-down {
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>
