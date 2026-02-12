@@ -1,74 +1,59 @@
-<script setup lang="ts">
-import { onMounted, onBeforeUnmount } from 'vue';
-
-let mainEl: HTMLElement | null = null;
-let handler: (e: MouseEvent) => void;
-let mouseOutHandler: (e: MouseEvent) => void;
-
-onMounted(() => {
-    mainEl = document.querySelector('.main');
-    handler = (e: MouseEvent) => {
-        if (!mainEl) return;
-        mainEl.style.setProperty('--mouse-x', e.clientX + 'px');
-        mainEl.style.setProperty('--mouse-y', e.clientY + 'px');
-        mainEl.style.setProperty('--highlight-opacity', '1');
-    };
-    mouseOutHandler = (e: MouseEvent) => {
-        if (!mainEl) return;
-        if (!e.relatedTarget || !(e.relatedTarget instanceof Node) || !document.body.contains(e.relatedTarget)) {
-            mainEl.style.setProperty('--highlight-opacity', '0');
-            // 延迟重置位置，等 opacity 渐变完成后再移出视口
-            setTimeout(() => {
-                if (mainEl) {
-                    mainEl.style.setProperty('--mouse-x', '-9999px');
-                    mainEl.style.setProperty('--mouse-y', '-9999px');
-                }
-            }, 200);
-        }
-    };
-    document.addEventListener('mousemove', handler);
-    document.addEventListener('mouseout', mouseOutHandler);
-});
-
-onBeforeUnmount(() => {
-    document.removeEventListener('mousemove', handler);
-    document.removeEventListener('mouseout', mouseOutHandler);
-});
-</script>
-
 <template>
-    <div class="min-h-screen p-8 main">
-        <div class="mt-4">
-            <NuxtPage></NuxtPage>
+    <div class="p-8 flex flex-col h-screen items-center">
+        <div
+            class="time-block flex flex-col items-center gap-2 text-center mt-20 select-none py-8 px-16 rounded-3xl w-fit"
+        >
+            <div class="text-7xl font-bold leading-tight tracking-wide">{{ timeStr }}</div>
+            <div class="text-base font-normal text-gray-500">{{ dateStr }} {{ weekStr }}</div>
         </div>
     </div>
 </template>
 
-<style scoped lang="scss">
-.main {
-    --mouse-x: -9999px;
-    --mouse-y: -9999px;
-    --highlight-opacity: 0;
-    position: relative;
-    background-color: white;
-    background-image:
-        linear-gradient(to right, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
-    background-size: 2.4rem 2.4rem;
+<script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+
+const timeStr = ref('');
+const dateStr = ref('');
+const weekStr = ref('');
+
+const weeks = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+
+const setting = ref({
+    showSeconds: false,
+});
+
+function updateTime() {
+    const now = new Date();
+    timeStr.value =
+        now.toLocaleTimeString('zh-CN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+            second: setting.value.showSeconds ? '2-digit' : undefined,
+        }) ?? '';
+    dateStr.value = now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' }) ?? '';
+    weekStr.value = weeks[now.getDay()] ?? '';
 }
 
-/* 高亮层 */
-.main::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: var(--highlight-opacity);
-    transition: opacity 0.2s ease;
-    background-image:
-        linear-gradient(to right, rgba(96, 178, 213, 0.9) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(96, 178, 213, 0.9) 1px, transparent 1px);
-    background-size: 2.4rem 2.4rem;
-    mask-image: radial-gradient(circle 120px at var(--mouse-x) var(--mouse-y), black 40%, transparent 100%);
+let timer: ReturnType<typeof setInterval>;
+
+onMounted(() => {
+    updateTime();
+    timer = setInterval(updateTime, 1000);
+});
+
+onBeforeUnmount(() => {
+    clearInterval(timer);
+});
+</script>
+
+<style scoped>
+.time-block {
+    background: radial-gradient(
+        ellipse 80% 70% at 50% 50%,
+        rgba(255, 255, 255, 0.85) 0%,
+        rgba(255, 255, 255, 0.4) 60%,
+        transparent 100%
+    );
 }
 </style>
