@@ -53,8 +53,8 @@ onBeforeUnmount(() => {
     position: relative;
     background-color: white;
     background-image:
-        linear-gradient(to right, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+        linear-gradient(to right, rgba(0, 0, 0, 0.2) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 1px, transparent 1px);
     background-size: 2.4rem 2.4rem;
 }
 
@@ -72,8 +72,8 @@ onBeforeUnmount(() => {
     opacity: var(--highlight-opacity);
     transition: opacity 0.2s ease;
     background-image:
-        linear-gradient(to right, rgba(96, 178, 213, 0.9) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(96, 178, 213, 0.9) 1px, transparent 1px);
+        linear-gradient(to right, var(--primary) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--primary) 1px, transparent 1px);
     background-size: 2.4rem 2.4rem;
     mask-image: radial-gradient(circle 120px at var(--mouse-x) var(--mouse-y), black 40%, transparent 100%);
 }
