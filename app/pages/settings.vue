@@ -1,7 +1,11 @@
+<script setup lang="ts"></script>
+
 <template>
     <div class="p-8 flex flex-col h-full w-full items-center">
-        <div class="time-block flex flex-col items-center gap-4 text-center select-none py-8 px-16 rounded-3xl w-fit">
-            <h1 class="text-2xl font-bold text-gray-700">日历</h1>
+        <div
+            class="time-block flex flex-col items-center gap-4 text-center select-none py-8 px-16 rounded-3xl w-fit"
+        >
+            <h1 class="text-2xl font-bold text-gray-700">设置</h1>
             <p class="text-base font-normal text-gray-500">功能开发中，敬请期待</p>
             <NuxtLink
                 to="/"
@@ -12,8 +16,6 @@
         </div>
     </div>
 </template>
-
-<script setup lang="ts"></script>
 
 <style scoped>
 .time-block {
