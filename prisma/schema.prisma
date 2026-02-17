@@ -1,0 +1,22 @@
+// 个人工作站 - 笔记系统 (混合存储模式)
+// 数据库仅作为「索引层」，真实内容在 ./data/notes/*.md 文件中
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "sqlite"
+}
+
+/// 笔记索引表（可从文件系统重建）
+/// filePath 指向 data/notes/ 下的 .md 文件相对路径
+model Note {
+    id          String   @id // 与 Frontmatter 中的 uuid 一致，重建索引时从文件读取
+    title       String
+    tags        String   // JSON 数组字符串，如 ["work", "ideas"]
+    filePath    String   @unique // 相对路径，如 "2024/01/my-note.md"
+    textContent String   // 去除 Markdown 符号的纯文本，用于全文检索
+    createdAt   DateTime
+    updatedAt   DateTime // 文件最后修改时间，用于增量同步检测
+}
